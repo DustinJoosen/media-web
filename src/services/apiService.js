@@ -106,8 +106,8 @@ export const getItemsByToken = async (token) => {
     return response.json();
 };
 
-export const getFileStream = async (id) => {
-    const response = await fetch(`${API_URL}/media/${id}/file`, {
+export const getFilePreview = async (id) => {
+    const response = await fetch(`${API_URL}/media/${id}/preview`, {
         method: "GET",
     });
 
@@ -121,3 +121,21 @@ export const getFileStream = async (id) => {
 
     return response;
 }
+
+
+export const getFileDownload = async (id) => {
+    const response = await fetch(`${API_URL}/media/${id}/download`, {
+        method: "GET",
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        const apiError = new Error(error.message);
+
+        apiError.statusCode = response.status;
+        throw apiError;
+    }
+
+    return response;
+}
+

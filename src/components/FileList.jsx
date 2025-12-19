@@ -1,13 +1,35 @@
-import {getFileStream} from "../services/apiService.js";
+import {getFileDownload} from "../services/apiService.js";
+import MediaItemPreviewPopup from "./Popups/MediaItemPreviewPopup.jsx";
+import {useState} from "react";
 
 const FileList = ({ files }) => {
-	const actionButtonStyle = {
-		padding: '2px 8px'
-	}
+	const [isOpen, setIsOpen] = useState(false);
+	const [selectedMediaId, setSelectedMediaId] = useState(null);
+
+	const togglePopup = (id) => {
+		setIsOpen(!isOpen);
+		setSelectedMediaId(id);
+	};
 
 	const handleDownload = async (id) => {
 		try {
-			const response = await getFileStream(id);
+			const response = await getFileDownload(id);
+			const disposition = response.headers.get("Content-Disposition");
+
+			let fileName = "download";
+			if (disposition && disposition.includes("attachment")) {
+				const regex = /filename="(.+)"/;
+				const matches = regex.exec(disposition);
+
+				if (matches != null && matches[1]) { fileName = matches[1]; }
+				else {
+					const fallbackMatches = /filename=(.+)/.exec(disposition);
+					if (fallbackMatches != null && fallbackMatches[1]) {
+						fileName = fallbackMatches[1];
+					}
+				}
+			}
+
 			const fileBlob = await response.blob();
 
 			// Create a download link
@@ -15,7 +37,7 @@ const FileList = ({ files }) => {
 			const url = window.URL.createObjectURL(fileBlob);
 
 			link.href = url;
-			link.download = id;
+			link.download = fileName;
 			link.click();
 
 			window.URL.revokeObjectURL(url);
@@ -23,6 +45,10 @@ const FileList = ({ files }) => {
 			alert("Could not download file. Please try again.")
 		}
 	};
+
+	const actionButtonStyle = {
+		padding: '2px 8px'
+	}
 
 	return (
 		<div className="list-group shadow-sm">
@@ -43,7 +69,7 @@ const FileList = ({ files }) => {
 						<div className="col-3">
 							<div className="btn-group">
 								<button className="btn btn-primary btn-sm" style={actionButtonStyle}
-									onClick={() => alert(`Preview ${item.id} clicked`)}>
+									onClick={() => togglePopup(item.id)}>
 									<i className="bi bi-eye"></i>
 								</button>
 								<button className="btn btn-success btn-sm" style={actionButtonStyle}
@@ -58,6 +84,11 @@ const FileList = ({ files }) => {
 									onClick={() => alert(`Delete ${item.id} clicked`)}>
 									<i className="bi bi-trash"></i>
 								</button>
+								<MediaItemPreviewPopup
+									mediaId={selectedMediaId}
+									show={isOpen}
+									togglePopup={togglePopup}
+								/>
 							</div>
 						</div>
 					</div>
