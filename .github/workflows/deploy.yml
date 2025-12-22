@@ -1,4 +1,4 @@
-name: Deploy Media Web
+name: Deploy Media App
 
 on:
   push:
@@ -25,7 +25,7 @@ jobs:
 
       - name: Package build
         run: |
-          tar czf media-web-artifact.tar.gz -C dist .
+          tar czf media-app-artifact.tar.gz -C dist .
 
       - name: Add server to known_hosts
         run: |
@@ -34,13 +34,13 @@ jobs:
 
       - name: Upload artifact
         run: |
-          scp media-web-artifact.tar.gz \
+          scp media-app-artifact.tar.gz \
             ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/tmp/
 
       - name: Deploy and restart service
         run: |
           ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "
-            rm -rf /home/syter/Services/media/media-web &&
-            mkdir -p /home/syter/Services/media/media-web &&
-            tar xzf /tmp/media-web-artifact.tar.gz -C /home/syter/Services/media/media-web
+            rm -rf /home/syter/Services/media/media-app &&
+            mkdir -p /home/syter/Services/media/media-app &&
+            tar xzf /tmp/media-web-artifact.tar.gz -C /home/syter/Services/media/media-app
           "
