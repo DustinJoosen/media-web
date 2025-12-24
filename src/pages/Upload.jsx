@@ -1,7 +1,7 @@
 import {useState} from "react";
 import FileUpload from "../components/FileUpload.jsx";
 import {uploadFile} from "../services/apiService.js";
-import {useNavigate} from "react-router-dom";
+import {redirect, useNavigate} from "react-router-dom";
 
 const Upload = () => {
     const [file, setFile] = useState(null);
@@ -10,6 +10,8 @@ const Upload = () => {
     const [token, setToken] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [resultId, setResultId] = useState(null);
+    const [seed, setSeed] = useState(1);
 
     const navigate = useNavigate();
 
@@ -25,10 +27,18 @@ const Upload = () => {
         if (!token) return alert("Please enter a token");
 
         setIsLoading(true);
+        setError("");
 
         try {
-            await uploadFile(file, title, description, token);
-            navigate("/");
+            let result = await uploadFile(file, title, description, token);
+            setResultId(result.id);
+
+            setToken("");
+            setFile(null);
+            setTitle("");
+            setDescription("");
+            setSeed(Math.random); // Reload the seed so that the file component gets reloaded.
+
         } catch (err) {
             if (err.statusCode === 404 || err.statusCode === 401) {
                 setError(err.message);
@@ -42,7 +52,7 @@ const Upload = () => {
 
     return (
 
-        <div className="container my-4">
+        <div className="container my-4 w-50">
             <div className="card shadow-sm h-100">
                 <div className="card-body">
                     <h5 className="mb-4">Upload a Media File</h5>
@@ -67,7 +77,7 @@ const Upload = () => {
                             <textarea className="form-control" id="description" placeholder="A nice picture of the food I just ate"
                                       rows={4} value={description} onChange={(e) => setDescription(e.target.value)} />
                         </div>
-                        <FileUpload onFileSelect={handleFileSelect} />
+                        <FileUpload key={seed} onFileSelect={handleFileSelect} />
                         <button type="submit" className="btn text-white p-3"
                                 disabled={file == null || token === "" || isLoading}
                                 style={{
@@ -87,6 +97,18 @@ const Upload = () => {
                             {isLoading ? "Uploading..." : "Submit"}
                         </button>
                     </form>
+                    <hr className="mt-4" />
+                    <div className="mt-4">
+                        <label className="form-label">Result Id</label><br/>
+                        <div className="input-group">
+                            <input type="text" className="form-control" value={resultId ?? ""} disabled
+                                   placeholder="Id of new file will appear here" />
+                            <button className="btn btn-outline-secondary" type="button" disabled={resultId === ""}
+                                    onClick={() => navigator.clipboard.writeText(resultId) }>
+                                <i className="bi bi-clipboard"></i>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
