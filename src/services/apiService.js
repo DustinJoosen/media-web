@@ -126,7 +126,7 @@ export const modifyMediaItem = async (token, itemId, title, description) => {
         },
         body: JSON.stringify({
             title,
-            description: description.trim() === "" ? null : description
+            description: description?.trim() === "" ? null : description
         }),
     });
 

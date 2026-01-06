@@ -2,6 +2,7 @@ import {useState} from "react";
 import FileUpload from "../components/FileUpload.jsx";
 import {uploadFile} from "../services/apiService.js";
 import {redirect, useNavigate} from "react-router-dom";
+import {validateFile} from "../validation/upload.js";
 
 const Upload = () => {
     const [file, setFile] = useState(null);
@@ -16,15 +17,27 @@ const Upload = () => {
     const navigate = useNavigate();
 
     const handleFileSelect = (selectedFile) => {
+        let validity = validateFile(selectedFile);
+        if (!validity.valid) {
+            setError(validity.message);
+            return;
+        }
+
+        setError("");
         setFile(selectedFile);
     };
-
 
     const handleSubmit = async (e) => {
         e.preventDefault();
 
         if (!file) return alert("Please select a file.");
         if (!token) return alert("Please enter a token");
+
+        let validity = validateFile(file);
+        if (!validity.valid) {
+            setError(validity.message);
+            return;
+        }
 
         setIsLoading(true);
         setError("");
@@ -40,7 +53,7 @@ const Upload = () => {
             setSeed(Math.random); // Reload the seed so that the file component gets reloaded.
 
         } catch (err) {
-            if (err.statusCode === 404 || err.statusCode === 401) {
+            if (err.statusCode >= 400 && err.statusCode < 500) {
                 setError(err.message);
             } else {
                 setError("An unexpected error occurred. Please try again.");
@@ -49,6 +62,11 @@ const Upload = () => {
             setIsLoading(false);
         }
     };
+
+    const isButtonDisabled = () => {
+        let validity = validateFile(file);
+        return !validity.valid || file == null || token === "" || isLoading;
+    }
 
     return (
 
@@ -79,7 +97,7 @@ const Upload = () => {
                         </div>
                         <FileUpload key={seed} onFileSelect={handleFileSelect} />
                         <button type="submit" className="btn text-white p-3"
-                                disabled={file == null || token === "" || isLoading}
+                                disabled={isButtonDisabled()}
                                 style={{
                                     background: "linear-gradient(to right, #ff7171, #F1AE4A)",
                                     boxShadow: "2px 1px 10px gray",
@@ -103,7 +121,7 @@ const Upload = () => {
                         <div className="input-group">
                             <input type="text" className="form-control" value={resultId ?? ""} disabled
                                    placeholder="Id of new file will appear here" />
-                            <button className="btn btn-outline-secondary" type="button" disabled={resultId === ""}
+                            <button className="btn btn-outline-secondary" type="button" disabled={resultId == null}
                                     onClick={() => navigator.clipboard.writeText(resultId) }>
                                 <i className="bi bi-clipboard"></i>
                             </button>
