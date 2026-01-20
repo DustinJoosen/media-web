@@ -22,6 +22,12 @@ jobs:
       - name: Build Docker image
         run: docker build -t media-app:latest .
 
+      - name: Save Docker image to tar
+        run: docker save media-app:latest -o media-app.tar
+
+      - name: Copy image tar to server
+        run: scp media-app.tar ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/tmp/media-app.tar
+
       - name: Add server to known_hosts
         run: |
           mkdir -p ~/.ssh
@@ -29,5 +35,7 @@ jobs:
 
       - name: Deploy Docker container to server
         run: ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "
+          docker load -i /tmp/media-app.tar &&
           docker rm -f media-app || true &&
-          docker run -d --name media-app -p 9002:80 --restart unless-stopped media-app:latest"
+          docker run -d --name media-app -p 9002:80 --restart unless-stopped media-app:latest &&
+          rm /tmp/media-app.tar"
