@@ -4,6 +4,7 @@ import {useEffect, useState} from "react";
 const HealthStatus = () => {
     const [healthInfo, setHealthInfo] = useState(null);
     const [error, setError] = useState(null);
+    const [_, setNow] = useState(Date.now());
 
     useEffect(() => {
         const fetchHealthData = async () => {
@@ -17,9 +18,28 @@ const HealthStatus = () => {
         };
 
         fetchHealthData();
-        const intervalId = setInterval(fetchHealthData, 5000);
+        const intervalId = setInterval(fetchHealthData, 30 * 1000);
         return () => clearInterval(intervalId);
     }, []);
+
+    useEffect(() => {
+        const tickId = setInterval(() => {
+            setNow(Date.now());
+        }, 1000);
+
+        return () => clearInterval(tickId);
+    }, []);
+
+    const formatUptime = (startTime) => {
+        const diffMs = Date.now() - new Date(startTime).getTime();
+        const totalSeconds = Math.max(0, Math.floor(diffMs / 1000));
+
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+
+        return `${hours}h ${minutes}m ${seconds}s`;
+    };
 
     if (!healthInfo && !error) {
         return <p>Loading...</p>;
@@ -73,7 +93,7 @@ const HealthStatus = () => {
                     <h5 className="text-center">Runtime Status</h5>
                     <ul className="list-group">
                         <li className="list-group-item d-flex justify-content-between align-items-center">
-                            <strong>Uptime:</strong> {healthInfo.runtime.uptime}
+                            <strong>Uptime:</strong> {formatUptime(healthInfo.runtime.startTime)}
                         </li>
                         <li className="list-group-item d-flex justify-content-between align-items-center">
                             <strong>Start Time:</strong> {healthInfo.runtime.startTime}
