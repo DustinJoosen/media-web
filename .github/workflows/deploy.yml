@@ -14,6 +14,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      - name: Install dependencies and build
+        run: |
+          npm install
+          npm run build          
+
       - name: Set up SSH
         uses: webfactory/ssh-agent@v0.9.0
         with:
@@ -23,19 +33,6 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
-
-      - name: Build Docker image
-        run: docker build -t media-app:latest .
-
-      - name: Save Docker image to tar
-        run: docker save media-app:latest -o media-app.tar
-
-      - name: Copy image tar to server
-        run: scp media-app.tar ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/tmp/media-app.tar
-
-      - name: Deploy Docker container to server
-        run: ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "
-          docker load -i /tmp/media-app.tar &&
-          docker rm -f media-app || true &&
-          docker run -d --name media-app -p 9002:80 --restart unless-stopped media-app:latest &&
-          rm /tmp/media-app.tar"
+          
+      - name: Sync app files to server
+        run: rsync -av --delete dist/ ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/var/www/html/media-app/
